@@ -1,0 +1,107 @@
+CREATE TABLE [dbo].[TBL_EmailOtpAuthentication](
+[RequesterPUID] [nvarchar](10) NULL,
+[AuthenticationOTP] [int] NULL
+) ON [PRIMARY]
+GO
+
+
+/****** Object:  StoredProcedure [dbo].[USP_EmailOtpAuthentication]    Script Date: 7/1/2020 11:34:49 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+/* =============================================
+
+--Generate OTP
+DECLARE @GenerateOTP nvarchar(200) ;
+EXEC USP_EmailOtpAuthentication @Task = 'GenerateOTP' , @RequesterPUID='YYYY', @StatusMsg=@GenerateOTP output
+SELECT @GenerateOTP;
+
+
+--Validate OTP
+DECLARE @ValidateOTP nvarchar(200) ;
+EXEC USP_EmailOtpAuthentication @Task ='ValidateOTP', @RequesterPUID='YYYY', @AuthenticationOTP = 7880, @StatusMsg= @ValidateOTP output
+SELECT @ValidateOTP;
+
+-- ============================================= */
+CREATE PROCEDURE [dbo].[USP_EmailOtpAuthentication] (@Task NVARCHAR(20) , @RequesterPUID  NVARCHAR(10) = 'NA', @AuthenticationOTP INT = 0, @StatusMsg Nvarchar(200) output)
+
+AS
+
+SET NOCOUNT ON
+
+IF @Task='GenerateOTP'
+BEGIN
+IF NOT EXISTS (Select 1  from [TBL_EmailOtpAuthentication] WHERE  [RequesterPUID]=@RequesterPUID)
+INSERT INTO [dbo].[TBL_EmailOtpAuthentication] (RequesterPUID,AuthenticationOTP) VALUES (@RequesterPUID , LEFT(CAST(RAND()*1000000000+999999 AS INT),4))
+ELSE
+UPDATE [TBL_EmailOtpAuthentication] SET AuthenticationOTP=LEFT(CAST(RAND()*1000000000+999999 AS INT),4) WHERE [RequesterPUID]=@RequesterPUID
+
+Select @StatusMsg=cast(AuthenticationOTP as nvarchar(10)) from [TBL_EmailOtpAuthentication]  WHERE [RequesterPUID]=@RequesterPUID
+
+END
+
+
+IF @Task='ValidateOTP'
+BEGIN
+IF EXISTS (Select 1 from [TBL_EmailOtpAuthentication]  WHERE AuthenticationOTP=@AuthenticationOTP)
+SET @StatusMsg= 'Success'
+ELSE
+SET @StatusMsg= 'Invalid OTP…!'
+END
+
+
+
+
+GO
+
+
+
+ public string GenerateOTP(string sqlQuery,string puid)
+        {
+            string returnmsg = "";
+            using (SqlConnection connection = new SqlConnection(Common.Common._ConnectionString1))
+            {
+                SqlCommand cmd = new SqlCommand(sqlQuery, connection);
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Task", "GenerateOTP");
+                cmd.Parameters.AddWithValue("@RequesterPUID", puid);
+                
+                cmd.Parameters.Add("@StatusMsg", SqlDbType.NVarChar, 500);
+                cmd.Parameters["@StatusMsg"].Direction = ParameterDirection.Output;
+                connection.Open();
+                cmd.ExecuteNonQuery();
+                connection.Close();
+                returnmsg = (string)cmd.Parameters["@StatusMsg"].Value;
+
+
+
+            }
+            return returnmsg; 
+            
+        }
+
+        public string ValidateOTP(string sqlQuery, string puid,int otp)
+        {
+            string returnmsg = "";
+            using (SqlConnection connection = new SqlConnection(Common.Common._ConnectionString1))
+            {
+                SqlCommand cmd = new SqlCommand(sqlQuery, connection);
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Task", "ValidateOTP");
+                cmd.Parameters.AddWithValue("@RequesterPUID", puid);
+                cmd.Parameters.AddWithValue("@AuthenticationOTP", otp);
+
+                cmd.Parameters.Add("@StatusMsg", SqlDbType.NVarChar, 500);
+                cmd.Parameters["@StatusMsg"].Direction = ParameterDirection.Output;
+                connection.Open();
+                cmd.ExecuteNonQuery();
+                connection.Close();
+                returnmsg = (string)cmd.Parameters["@StatusMsg"].Value;
+            }
+            return returnmsg;
+
+        }
+        // BEGIN  ReturnDatasetForRestore
