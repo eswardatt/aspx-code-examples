@@ -1,0 +1,11 @@
+html {
+			overflow: scroll;
+			width: 240px;
+			height: 100px;
+		}
+
+		::-webkit-scrollbar {
+			width: 0px;
+			background: transparent;
+			/* make scrollbar transparent */
+		}
