@@ -1,0 +1,19 @@
+  $("#<%=TextBox1.ClientID%>").keyup(function () {
+            var v = document.getElementById("TextBox1").value;
+            if (v.length > 2) {
+                alert(v);
+            }
+        });
+
+        
+
+        //Re-Create for on page postbacks
+        var prm = Sys.WebForms.PageRequestManager.getInstance();
+        prm.add_endRequest(function () {
+            $("#<%=TextBox1.ClientID%>").keyup(function () {
+                var v = document.getElementById("TextBox1").value;
+                if (v.length > 2) {
+                    alert(v);
+                }
+            });
+        });
